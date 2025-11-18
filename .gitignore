@@ -1,32 +1,4 @@
-# Build output
+# Deno build output
 dist/
 node_modules/
 .vite/
-
-# Deno (keep backups out of git)
-deno.json.bak
-deno.lock.bak
-
-# Node.js
-package-lock.json
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-
-# Environment variables
-.env
-.env.local
-.env.production.local
-.env.development.local
-
-# Editor directories
-.vscode/
-.idea/
-*.swp
-*.swo
-*~
-
-# OS
-.DS_Store
-Thumbs.db

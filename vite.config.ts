@@ -1,5 +1,8 @@
-import { defineConfig } from "vite";
-import vue from "@vitejs/plugin-vue";
+import { defineConfig } from "npm:vite";
+import vue from "npm:@vitejs/plugin-vue";
+import { Env } from "https://deno.land/x/env@v2.2.0/env.js";
+
+const env = new Env();
 
 export default defineConfig({
   base: "/",
@@ -9,7 +12,7 @@ export default defineConfig({
     port: 8000,
   },
   define: {
-    __COMMIT_HASH__: JSON.stringify(process.env.COMMIT_HASH || "dev"),
+    __COMMIT_HASH__: JSON.stringify(env.get("COMMIT_HASH", "dev")),
   },
   css: {
     preprocessorOptions: {
@@ -29,5 +32,4 @@ export default defineConfig({
   },
   root: "src",
   publicDir: "../public",
-  cacheDir: "/tmp/.vite",
 });
