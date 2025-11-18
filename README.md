@@ -27,8 +27,6 @@ src/
 └── config/              # Configuration files
 ```
 
-See [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md) for detailed architecture documentation.
-
 ## 🚀 Getting Started
 
 ### Development
