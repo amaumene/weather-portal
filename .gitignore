@@ -3,6 +3,10 @@ dist/
 node_modules/
 .vite/
 
+# Deno (keep backups out of git)
+deno.json.bak
+deno.lock.bak
+
 # Node.js
 package-lock.json
 npm-debug.log*
