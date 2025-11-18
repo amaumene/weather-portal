@@ -29,4 +29,5 @@ export default defineConfig({
   },
   root: "src",
   publicDir: "../public",
+  cacheDir: "/tmp/.vite",
 });
