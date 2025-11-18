@@ -31,7 +31,7 @@ export const useHistory = () => {
   };
 };
 
-const isJapan = (detail: string) => detail.endsWith("日本");
+const isJapan = (detail: string) => detail.endsWith("Japan");
 const resToPlace = (item: any): Place => {
   const p = {
     place_id: item.place_id.toString(),
@@ -45,7 +45,8 @@ const resToPlace = (item: any): Place => {
   if (!p.name) {
     p.name = item.names?.name;
   }
-  if (!item.lat) {
+  // Use explicit null/undefined check to allow 0 as valid coordinate (e.g., equator)
+  if (item.lat == null || item.lon == null) {
     p.lon = item.geometry?.coordinates[0];
     p.lat = item.geometry?.coordinates[1];
   }
@@ -59,34 +60,53 @@ export const useSearch = () => {
   );
   const history = useHistory();
   const searching = ref(false);
-  const search = async (query: string): Promise<Place[]> => {
+  const error = ref<string | null>(null);
+
+  const search = async (query: string, signal?: AbortSignal): Promise<Place[]> => {
     searching.value = true;
+    error.value = null;
 
-    if (store.value.has(query)) {
-      history.add(query);
-      searching.value = false;
-      return store.value.get(query)!;
-    }
+    try {
+      // Return cached results if available
+      if (store.value.has(query)) {
+        history.add(query);
+        return store.value.get(query)!;
+      }
 
-    const response = await fetch(
-      `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`,
-    );
-    if (!response.ok) {
-      searching.value = false;
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`,
+        { signal }, // Pass AbortSignal to fetch
+      );
+
+      if (!response.ok) {
+        error.value = `Search failed: ${response.status} ${response.statusText}`;
+        console.error(`Search API error: ${response.status}`, response);
+        return [];
+      }
+
+      const res = await response.json();
+
+      // deno-lint-ignore no-explicit-any
+      const places = res.map(resToPlace).filter((place: Place) => isJapan(place.display_name));
+
+      store.value.set(query, places);
+      if (places.length > 0) {
+        history.add(query);
+      }
+
+      return places;
+    } catch (err) {
+      // Don't set error if request was aborted (user started new search)
+      if (err instanceof Error && err.name === 'AbortError') {
+        return [];
+      }
+      const message = err instanceof Error ? err.message : 'Unknown error occurred';
+      error.value = `Network error: ${message}`;
+      console.error('Search error:', err);
       return [];
+    } finally {
+      searching.value = false;
     }
-    const res = await response.json();
-
-    // deno-lint-ignore no-explicit-any
-    const places = res.map(resToPlace).filter((place: Place) => isJapan(place.display_name));
-
-    store.value.set(query, places);
-    if (places.length > 0) {
-      history.add(query);
-    }
-
-    searching.value = false;
-    return places;
   };
 
   const storeForID = useLocalStorage(
@@ -104,16 +124,18 @@ export const useSearch = () => {
         `https://nominatim.openstreetmap.org/details?osmtype=N&osmid=${osmID}&addressdetails=0&hierarchy=0&group_hierarchy=1&format=json`,
       );
       if (!response.ok) {
+        console.error(`SearchByID API error: ${response.status}`, response);
         return null;
       }
       const res = await response.json();
       const place = resToPlace(res);
       storeForID.value.set(osmID, place);
       return place;
-    } catch {
+    } catch (err) {
+      console.error('SearchByID error:', err);
       return null;
     }
   };
 
-  return { search, history, searching, searchByID };
+  return { search, history, searching, searchByID, error };
 };

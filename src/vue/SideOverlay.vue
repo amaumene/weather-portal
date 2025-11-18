@@ -3,7 +3,7 @@
     <div class="overlay" v-show="show" @click='$emit("close")'>
       <Transition name="slide">
         <div class="menu" v-show="show" @click.stop>
-          <p class="menu__title">検索履歴</p>
+          <p class="menu__title">Search History</p>
           <ul class="menu__history">
             <li v-for="(item, i) in histories" :key="i" @click='$emit("select", item)'>
               <p class="menu__history-item">{{ item }}</p>
@@ -11,7 +11,7 @@
           </ul>
           <div class="menu__actions">
             <button class="menu__clear" @click="clear">
-              キャッシュをクリア
+              Clear Cache
             </button>
           </div>
         </div>
@@ -23,22 +23,29 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import { useLocalStorage } from "@vueuse/core";
-import { useHistory } from "../search";
-import { allCacheKeys } from "../const";
+import { useSearchComposable } from "../presentation/composables/useSearchComposable";
+import { useFavoritesComposable } from "../presentation/composables/useFavoritesComposable";
+import { ALL_CACHE_KEYS } from "../config/cache.config";
 
 defineProps<{
   show: boolean;
 }>();
 
-const { get } = useHistory();
-const histories = computed(() => get());
+const { getHistory } = useSearchComposable();
+const { clearAll: clearFavorites } = useFavoritesComposable();
+const histories = computed(() => getHistory());
 
 const clear = () => {
   const ok = window.confirm(
-    "キャッシュをクリアしますか？\n検索履歴、お気に入りが全て消去されます。",
+    "Are you sure you want to clear the cache?\nAll search history and favorites will be deleted.",
   );
   if (!ok) return;
-  allCacheKeys.forEach((key) => {
+
+  // Clear all caches via service layer
+  clearFavorites();
+
+  // Clear remaining localStorage keys
+  ALL_CACHE_KEYS.forEach((key) => {
     const s = useLocalStorage(key, undefined);
     s.value = undefined;
   });

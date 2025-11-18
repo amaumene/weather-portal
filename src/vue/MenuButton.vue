@@ -2,7 +2,7 @@
   <button
     class="menu-button"
     :aria-pressed="modelValue"
-    :aria-label='modelValue ? "メニューを閉じる" : "メニューを開く"'
+    :aria-label='modelValue ? "Close menu" : "Open menu"'
     @click="toggle"
   >
     <span :class='["bar", "bar1", { open: modelValue }]'></span>

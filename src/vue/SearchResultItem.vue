@@ -3,35 +3,22 @@
     <div class="item__info">
       <div class="item__info-main">
         <p class="item__name">{{ place.name }}</p>
-        <p class="item__tag">{{ place.addresstype }}</p>
+        <p class="item__tag">{{ place.addressType }}</p>
       </div>
       <p class="item__detail">{{ detail }}</p>
       <p class="item__latlon">{{ place.lat }} / {{ place.lon }}</p>
-      <HtmlComment :text="place.osm_id" />
     </div>
     <div class="item__actions">
-      <a class="item__action-button" :href="scwLink" target="_blank" rel="noopener noreferrer">
-        <img src="/scw.png" alt="scw"><span class="item__action-text">SCW</span>
-      </a>
-      <a class="item__action-button" :href="windyLink" target="_blank" rel="noopener noreferrer">
-        <img src="/windy.png" alt="Windy"><span class="item__action-text">Windy</span>
-      </a>
       <a
+        v-for="link in weatherLinks"
+        :key="link.service"
         class="item__action-button"
-        :href="weatherNewsLink"
+        :href="link.url"
         target="_blank"
         rel="noopener noreferrer"
       >
-        <img src="/wn.svg" alt="ウェザーニュース"><span class="item__action-text">WN</span>
-      </a>
-      <a
-        v-if="yamatenLink"
-        class="item__action-button"
-        :href="yamatenLink"
-        target="_blank"
-        rel="noopener noreferrer"
-      >
-        <img src="/yamaten.jpg" alt="ヤマテン"><span class="item__action-text">ヤマテン</span>
+        <img :src="`/${link.service}.svg`" :alt="link.name">
+        <span class="item__action-text">{{ getServiceDisplayName(link.service) }}</span>
       </a>
     </div>
 
@@ -43,9 +30,8 @@
 import { computed } from "vue";
 import Card from "./Card.vue";
 import StarIcon from "./StarIcon.vue";
-import HtmlComment from "./HtmlComment.vue";
-import { type Place } from "../search";
-import { getYamatenID } from "../yamaten";
+import type { Place } from "../domain/entities/Place";
+import { getServices } from "../application/ServiceContainer";
 
 const props = defineProps<{
   place: Place;
@@ -56,42 +42,30 @@ const emit = defineEmits<{
   (e: "fav", placeID: Place): void;
 }>();
 
+// Use domain entity method for formatted address
 const detail = computed((): string => {
-  if (!props.place.display_name) {
-    return "";
-  }
-  // 最後の「, 日本」を削除
-  if (!props.place.display_name.endsWith("日本")) {
-    return "";
-  }
-  const parts = props.place.display_name
-    .split(", ")
-    .slice(0, -1)
-    .filter((part) => part !== "日本")
-    .filter((part) => !/^\d{3}-\d{4}$/.test(part)); // 郵便番号を除外
-  return parts.reverse().join(" ");
+  return props.place.getFormattedAddress();
 });
 
-const scwLink = computed((): string => {
-  return `https://supercweather.com/?lat=${props.place.lat}&lng=${props.place.lon}`;
-});
-const windyLink = computed((): string => {
-  return `https://www.windy.com/${props.place.lat}/${props.place.lon}`;
-});
-const weatherNewsLink = computed(() => {
-  return `https://weathernews.jp/onebox/${props.place.lat}/${props.place.lon}`;
+// Get weather service instance
+const { weatherService } = getServices();
+
+// Get all weather links using the weather service
+const weatherLinks = computed(() => {
+  return weatherService.getWeatherLinks(props.place);
 });
 
-const yamatenLink = computed((): string | null => {
-  const mountainID = getYamatenID({
-    lat: props.place.lat,
-    lon: props.place.lon,
-  });
-  if (!mountainID) {
-    return null;
-  }
-  return mountainID ? `https://i.yamatenki.co.jp/mountain?mid=${mountainID}` : null;
-});
+// Helper function to get display name for each service
+const getServiceDisplayName = (service: string): string => {
+  const displayNames: Record<string, string> = {
+    scw: 'SCW',
+    windy: 'Windy',
+    weatherNews: 'WN',
+    yamaten: 'ヤマテン',
+    meteoblue: 'Meteoblue',
+  };
+  return displayNames[service] || service;
+};
 </script>
 
 <style lang="scss" scoped>
@@ -100,67 +74,82 @@ const yamatenLink = computed((): string | null => {
 
   &__info-main {
     display: flex;
-    gap: 4px;
-    align-items: flex-start;
+    gap: 6px;
     align-items: center;
     justify-content: flex-start;
   }
 
   &__name {
-    font-size: 1.2rem;
-    font-weight: bold;
+    font-size: 1.3rem;
+    font-weight: 600;
+    color: #333;
   }
 
   &__tag {
     display: inline-block;
-    padding: 0.1rem 0.4rem;
+    padding: 0.2rem 0.5rem;
     margin-top: 0.2rem;
-    font-size: 0.6rem;
+    font-size: 0.65rem;
+    font-weight: 600;
     color: #fff;
     text-transform: capitalize;
-    background-color: #29ca5f;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     border-radius: 6px;
   }
 
   &__detail {
-    margin-top: 0.2rem;
-    font-size: 0.9rem;
-    color: #666;
+    margin-top: 0.3rem;
+    font-size: 0.95rem;
+    color: #555;
   }
 
   &__latlon {
-    font-size: 0.8rem;
-    color: #999;
+    margin-top: 0.2rem;
+    font-size: 0.85rem;
+    color: #888;
   }
 
   &__actions {
     display: flex;
     flex-wrap: wrap;
-    gap: 8px;
+    gap: 10px;
     align-items: center;
     justify-content: flex-start;
-    margin-top: 0.5rem;
+    margin-top: 0.75rem;
   }
 
   &__action-button {
     display: inline-flex;
-    gap: 6px;
+    gap: 8px;
     align-items: center;
-    padding: 0.4rem 0.6rem;
-    font-size: 0.8rem;
-    color: #666;
+    padding: 0.6rem 1rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #667eea;
     text-decoration: none;
-    border: 1px solid #ccc;
-    border-radius: 4px;
+    background: white;
+    border: 2px solid rgba(102, 126, 234, 0.2);
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.15);
+    transition: all 0.25s ease;
 
     img {
-      width: 1.2rem;
-      height: 1.2rem;
+      width: 1.8rem;
+      height: 1.8rem;
       vertical-align: middle;
+      border-radius: 4px;
+      object-fit: contain;
     }
 
     &:hover {
-      opacity: 0.8;
+      background: rgba(102, 126, 234, 0.05);
+      border-color: #667eea;
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.25);
+      transform: translateY(-2px) scale(1.02);
+    }
+
+    &:active {
+      transform: translateY(0) scale(0.98);
     }
   }
 
@@ -172,11 +161,16 @@ const yamatenLink = computed((): string | null => {
 
   &__star {
     position: absolute;
-    top: 0.7rem;
-    right: 0.7rem;
-    width: 20px;
-    height: 20px;
+    top: 1rem;
+    right: 1rem;
+    width: 22px;
+    height: 22px;
     cursor: pointer;
+    transition: transform 0.2s ease;
+
+    &:hover {
+      transform: scale(1.1);
+    }
   }
 }
 </style>

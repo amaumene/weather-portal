@@ -1,8 +1,12 @@
 import { ref, watch } from "vue";
 import { useUrlSearchParams } from "@vueuse/core";
-import { Place, useSearch } from "./search";
+import type { Place } from "./domain/entities/Place";
+import { useSearchComposable } from "./presentation/composables/useSearchComposable";
 
-const isValidNumber = (value: string): boolean => !isNaN(Number(value)) && Number(value) >= 0;
+// Validate OSM ID format - should be a positive integer
+const isValidOsmId = (value: string): boolean => {
+  return /^\d+$/.test(value) && Number(value) > 0 && Number(value) <= Number.MAX_SAFE_INTEGER;
+};
 
 export const useDetail = () => {
   const place = ref<Place | null>(null);
@@ -14,18 +18,18 @@ export const useDetail = () => {
     place.value = null;
   };
 
-  const { searchByID } = useSearch();
+  const { searchById } = useSearchComposable();
   watch(() => params.id, async (newId) => {
     const id = Array.isArray(newId) ? newId[0] : newId;
     if (!id) {
       place.value = null;
       return;
     }
-    if (!isValidNumber(id)) {
+    if (!isValidOsmId(id)) {
       place.value = null;
       return;
     }
-    place.value = await searchByID(id);
+    place.value = await searchById(id);
   }, { immediate: true });
 
   return {

@@ -30,7 +30,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from "vue";
+import { ref, watch, onMounted, onUnmounted } from "vue";
 import { useScrollLock } from "@vueuse/core";
 
 import AppHeader from "./AppHeader.vue";
@@ -46,7 +46,7 @@ import { useDetail } from "../detail";
 const { place, clearID } = useDetail();
 
 const searchText = ref("");
-const isWindowScollLocked = useScrollLock(window);
+const isWindowScrollLocked = useScrollLock(window);
 
 // --- Side Menu Overlay ---
 const menuOpened = ref(false);
@@ -55,13 +55,13 @@ const onSelect = (item: string) => {
   searchText.value = item;
 };
 watch(menuOpened, (v) => {
-  isWindowScollLocked.value = v;
+  isWindowScrollLocked.value = v;
 });
 
 // --- Favorite List Overlay ---
 const favListOpened = ref(false);
 watch(favListOpened, (v) => {
-  isWindowScollLocked.value = v;
+  isWindowScrollLocked.value = v;
   if (v) {
     history.pushState(null, "", location.pathname + "#fav");
   } else {
@@ -71,21 +71,31 @@ watch(favListOpened, (v) => {
 const syncFavWithHash = () => {
   favListOpened.value = location.hash === "#fav";
 };
-window.addEventListener("hashchange", syncFavWithHash);
-syncFavWithHash();
+
+// Setup and cleanup event listener to prevent memory leak
+onMounted(() => {
+  window.addEventListener("hashchange", syncFavWithHash);
+  syncFavWithHash();
+});
+
+onUnmounted(() => {
+  window.removeEventListener("hashchange", syncFavWithHash);
+});
 </script>
 
 <style scoped lang="scss">
 .app {
+  min-height: 100vh;
+  padding-bottom: 2rem;
+
   &__main {
-    max-width: 800px;
-    min-height: calc(100dvh - 110px); // 50px header + 60px footer
-    padding: 1rem;
+    max-width: 1200px;
+    padding: 1.5rem;
     margin: 0 auto;
   }
 
   &__footer {
-    height: 60px;
+    padding: 2rem 0;
   }
 
   &__fav {
@@ -96,18 +106,24 @@ syncFavWithHash();
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 50px;
-    height: 50px;
+    width: 56px;
+    height: 56px;
     cursor: pointer;
-    background-color: #f9b618;
+    background: linear-gradient(135deg, #f9b618 0%, #f39c12 100%);
     border: none;
     border-radius: 50%;
-    box-shadow: 0 2px 4px rgb(0 0 0 / 40%);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    transition: all 0.2s ease;
+
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+    }
   }
 
   &__fav-icon {
-    width: 24px;
-    height: 24px;
+    width: 28px;
+    height: 28px;
   }
 }
 
@@ -122,5 +138,22 @@ syncFavWithHash();
 
 .up-enter-to, .up-leave-from {
   transform: translateY(0);
+}
+
+@media (max-width: 768px) {
+  .app__main {
+    padding: 1rem;
+  }
+}
+</style>
+
+<style lang="scss">
+/* Global styles for snowfinder theme */
+body {
+  margin: 0;
+  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  min-height: 100vh;
 }
 </style>

@@ -6,9 +6,9 @@
 
 <style lang="scss">
 .card {
-  padding: 0.8rem 1rem 1rem;
+  padding: 2rem;
   background: #fff;
-  border-radius: 6px;
-  box-shadow: 0 2px 4px rgb(0 0 0 / 10%);
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
 }
 </style>

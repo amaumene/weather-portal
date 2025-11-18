@@ -1,6 +1,6 @@
-import type { YamatenItem } from "./yamaten";
+import type { MountainData } from "./domain/services/MountainProximityService";
 
-export const mountains: YamatenItem[] = [
+export const mountains: MountainData[] = [
   {
     mid: "101",
     name: "利尻山",

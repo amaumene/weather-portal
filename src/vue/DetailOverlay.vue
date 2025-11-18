@@ -4,7 +4,7 @@
       <SearchResultItem class="detail__card" :place="place" @fav="toggle" :is-fav="isFav(place)" />
       <div class="detail__actions">
         <button v-if="showShareButton" class="detail__share" @click="share">Share</button>
-        <button class="detail__close batsu" @click='$emit("close")'></button>
+        <CloseButton class="detail__close" @click='$emit("close")' aria-label="Close detail view" />
       </div>
     </div>
   </div>
@@ -15,10 +15,11 @@ import { computed, onMounted } from "vue";
 import { useBreakpoints } from "@vueuse/core";
 
 import SearchResultItem from "./SearchResultItem.vue";
-import { type Place } from "../search";
-import { useFav } from "../fav";
+import CloseButton from "./CloseButton.vue";
+import type { Place } from "../domain/entities/Place";
+import { useFavoritesComposable } from "../presentation/composables/useFavoritesComposable";
 
-const { isFav, toggle } = useFav();
+const { isFavorite: isFav, toggle } = useFavoritesComposable();
 
 const props = defineProps<{
   place: Place;
@@ -45,15 +46,24 @@ const shareData = computed(() => {
   const baseUrl = window.location.origin + window.location.pathname;
   return {
     title: props.place.name,
-    url: `${baseUrl}/?id=${props.place.osm_id}`,
+    url: `${baseUrl}/?id=${props.place.osmId}`,
   };
 });
 
 const share = async () => {
   if (!navigator.share || !navigator.canShare(shareData.value)) {
+    console.warn('Web Share API not supported or data not shareable');
     return;
   }
-  await navigator.share(shareData.value);
+
+  try {
+    await navigator.share(shareData.value);
+  } catch (err) {
+    // User cancelled or share failed - only log if it's not an AbortError
+    if (err instanceof Error && err.name !== 'AbortError') {
+      console.error('Share failed:', err);
+    }
+  }
 };
 </script>
 
@@ -101,35 +111,8 @@ const share = async () => {
   &__close {
     width: 36px;
     height: 36px;
-    cursor: pointer;
     background-color: white;
-    border: none;
     border-radius: 6px;
   }
-}
-
-/* batsu */
-.batsu {
-  position: relative;
-  display: block;
-}
-
-.batsu::before,
-.batsu::after {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 2px;
-  height: 18px;
-  content: "";
-  background: #333;
-}
-
-.batsu::before {
-  transform: translate(-50%, -50%) rotate(45deg);
-}
-
-.batsu::after {
-  transform: translate(-50%, -50%) rotate(-45deg);
 }
 </style>
