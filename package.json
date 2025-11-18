@@ -10,41 +10,15 @@
     "start": "vite preview --host 0.0.0.0 --port 8000"
   },
   "dependencies": {
-    "vue": "^3.5.24",
-    "@vueuse/core": "^14.0.0",
     "@turf/distance": "^7.3.0",
-    "@turf/helpers": "^7.3.0"
+    "@turf/helpers": "^7.3.0",
+    "@vueuse/core": "^14.0.0",
+    "vue": "^3.5.24"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^5.2.1",
-    "vite": "^6.0.7",
     "sass": "^1.93.3",
-    "sass-embedded": "^1.93.3",
-    "stylelint": "^16.12.0",
-    "stylelint-config-recess-order": "^7.4.0",
-    "stylelint-config-recommended-scss": "^16.0.2",
-    "stylelint-config-recommended-vue": "^1.6.1",
-    "stylelint-config-standard": "^39.0.1",
     "typescript": "^5.7.2",
-    "vitest": "^3.0.3"
-  },
-  "engines": {
-    "node": ">=18.0.0",
-    "npm": ">=9.0.0"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git@github.com:amaumene/weather-portal.git"
-  },
-  "keywords": [
-    "weather",
-    "japan",
-    "vue",
-    "vite",
-    "openstreetmap",
-    "meteoblue",
-    "windy"
-  ],
-  "author": "amaumene",
-  "license": "MIT"
+    "vite": "^6.0.7"
+  }
 }
